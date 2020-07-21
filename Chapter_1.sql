@@ -650,19 +650,26 @@ VALUES ('Manual','No batteries'),
        ('Electronic','Lots of bats');
 GO
 
+-- SELECT * FROM Examples.GadgetType;
+-- SELECT * FROM Examples.Gadget
+
 ALTER TABLE Examples.Gadget
    ADD CONSTRAINT FKGadget$ref$Examples_GadgetType
-       FOREIGN KEY (GadgetType) REFERENCES Examples.GadgetType (GadgetType); 
+       FOREIGN KEY (GadgetType) 
+	   REFERENCES Examples.GadgetType (GadgetType); 
 GO
 
 CREATE VIEW Examples.GadgetExtension
 AS
-    SELECT Gadget.GadgetId, Gadget.GadgetNumber, 
-           Gadget.GadgetType, GadgetType.GadgetType As DomainGadgetType,
+    SELECT Gadget.GadgetId, 
+		   Gadget.GadgetNumber, 
+           Gadget.GadgetType, 
+		   --
+		   GadgetType.GadgetType As DomainGadgetType,
            GadgetType.Description as GadgetTypeDescription
-    FROM   Examples.Gadget
-             JOIN Examples.GadgetType
-                ON Gadget.GadgetType = GadgetType.GadgetType;
+    FROM	Examples.Gadget
+    JOIN	Examples.GadgetType 
+	ON		Gadget.GadgetType = GadgetType.GadgetType;
 GO
 
 INSERT INTO Examples.GadgetExtension(GadgetId, GadgetNumber, GadgetType,
@@ -670,29 +677,33 @@ INSERT INTO Examples.GadgetExtension(GadgetId, GadgetNumber, GadgetType,
 VALUES(7,'00000007','Acoustic','Acoustic','Sound');
 GO
 
+-- Both columns belong to GadgetType
 INSERT INTO Examples.GadgetExtension(DomainGadgetType, GadgetTypeDescription)
 VALUES('Acoustic','Sound');
 GO
+-- SELECT * FROM Examples.GadgetType;
 
-
+-- SELECT * FROM Examples.Gadget
 INSERT INTO Examples.GadgetExtension(GadgetId, GadgetNumber, GadgetType)
 VALUES(7,'00000007','Acoustic');
 GO
 
 SELECT *
-FROM   Examples.Gadget
-             JOIN Examples.GadgetType
-                ON Gadget.GadgetType = GadgetType.GadgetType
-WHERE  Gadget.GadgetType = 'Electronic';
+FROM	Examples.Gadget
+JOIN	Examples.GadgetType
+ON		Gadget.GadgetType = GadgetType.GadgetType
+WHERE	Gadget.GadgetType = 'Electronic';
 GO
 
+-- SELECT * FROM Examples.GadgetExtension
+-- SELECT * FROM Examples.GadgetType
 UPDATE Examples.GadgetExtension
 SET   GadgetTypeDescription = 'Uses Batteries'
 WHERE GadgetId = 1;
 GO
 
 ----Implement partitioned views
-
+-- CREATE SCHEMA Examples;
 CREATE TABLE Examples.Invoices_Region1
 (
     InvoiceId   int NOT NULL 
@@ -710,16 +721,32 @@ CREATE TABLE Examples.Invoices_Region2
         CONSTRAINT PKInvoices_Region2 PRIMARY KEY,
         CONSTRAINT CHKInvoices_Region2_PartKey 
                           CHECK (InvoiceId BETWEEN 10001 and 20000),
+	CustomerId  int NOT NULL,
+    InvoiceDate date NOT NULL
+);
 GO
 
 CREATE VIEW Examples.InvoicesPartitioned
 AS
+	--A
     SELECT InvoiceId, CustomerId, InvoiceDate
     FROM   Examples.Invoices_Region1
     UNION ALL
+	--B
     SELECT InvoiceId, CustomerId, InvoiceDate
     FROM   Examples.Invoices_Region2;
 GO
+
+-- bulk insert from sales.Invoices into A and B
+INSERT INTO Examples.Invoices_Region1 (InvoiceId, CustomerId, InvoiceDate)
+	SELECT InvoiceId, CustomerId, InvoiceDate 
+	FROM WideWorldImporters_DEV.Sales.Invoices
+	WHERE InvoiceID BETWEEN 1 AND 10000;
+
+INSERT INTO Examples.Invoices_Region2 (InvoiceId, CustomerId, InvoiceDate)
+	SELECT InvoiceId, CustomerId, InvoiceDate 
+	FROM WideWorldImporters_DEV.Sales.Invoices
+	WHERE InvoiceID BETWEEN 10001 AND 20000;
 
 SELECT *
 FROM  Examples.InvoicesPartitioned
@@ -736,7 +763,14 @@ FROM   Sales.Invoices_Region1
 UNION ALL
 SELECT InvoiceId, CustomerId, InvoiceDate
 FROM   ServerName.DatabaseName.Sales.Invoices_Region2;
+--		SERVER		DB			SCHEMA		TABLE
 GO
+
+SELECT * FROM QuickCart.dbo.OrdersItems;
+
+SELECT * 
+FROM Sales.Orders AS A
+JOIN QuickCart.dbo.OrdersItems AS B ON A.OrderId = B.OrderId
 
 ----Implement indexed views
 
