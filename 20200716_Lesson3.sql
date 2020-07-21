@@ -42,3 +42,60 @@ ON Application.People (PreferredName)
 INCLUDE (FullName)
 ON USERDATA;
 GO
+
+SELECT * FROM Sales.CustomerTransactions WHERE PaymentMethodID = 4;
+GO
+
+-- Hiding data for a specific purpose
+CREATE VIEW Sales.Orders12MonthsMultipleItems
+AS
+	-- SELECT STATEMENT
+	SELECT OrderID, CustomerID, SalespersonPersonID, OrderDate, ExpectedDeliveryDate
+	FROM sales.Orders
+	WHERE OrderDate >= DATEADD(YEAR, -1, '2016-01-01')
+	AND (SELECT COUNT(*) 
+		FROM Sales.OrderLines 
+		WHERE OrderLines.OrderID = Orders.OrderID) > 1
+GO
+
+/*
+SELECT COUNT(*)  --AGGREGATE FUNCTION
+FROM Sales.OrderLines -- 231412
+
+SELECT AVG(UnitPrice) -- 45.207065
+FROM Sales.OrderLines
+
+SELECT MAX(UnitPrice) -- 1899.00
+FROM Sales.OrderLines
+
+SELECT MIN(UnitPrice) -- 0.66
+FROM Sales.OrderLines
+
+SELECT *
+FROM Sales.OrderLines -- 231,412
+*/
+
+SELECT TOP 5 *
+FROM Sales.Orders12MonthsMultipleItems
+ORDER BY ExpectedDeliveryDate DESC -- NEWEST;
+
+-- bit columns where 1 means TRUE and 0 means FALSE
+SELECT PersonID, IsPermittedToLogon, IsEmployee, IsSalesperson
+FROM Application.People;
+GO
+
+-- Reformatting data
+DROP VIEW Application.PeopleEmployeeStatus;
+GO
+CREATE VIEW Application.PeopleEmployeeStatus
+AS
+	SELECT PersonID, FullName, IsPermittedToLogon, IsEmployee, IsSalesperson,
+		CASE WHEN IsPermittedToLogon = 1 THEN 'Can logon'
+			ELSE 'Cannot logon' END AS LogonRights,
+		CASE WHEN IsEmployee = 1 and IsSalesperson = 1 THEN 'Sales Person'
+			WHEN IsEmployee = 1 and IsSalesperson = 0 THEN 'Regular Employee'
+			ELSE 'Not an Employee' END AS EmployeeType
+	FROM Application.People
+GO
+
+SELECT FullName, LogonRights, EmployeeType FROM Application.PeopleEmployeeStatus

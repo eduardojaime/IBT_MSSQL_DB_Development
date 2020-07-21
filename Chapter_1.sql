@@ -540,7 +540,7 @@ SELECT TOP 5 SalesTerritory, SUM(InvoiceProfit) AS InvoiceProfitTotal
 FROM Reports.InvoiceSummaryBasis
 WHERE InvoiceDate > '2016-05-01'
 GROUP BY SalesTerritory
-ORDER BY InvoiceProfitTotal DESC;
+ORDER BY InvoiceProfitTotal DESC; -- 536,367.60
 GO
 
 
@@ -572,13 +572,16 @@ VALUES  (1,'00000001','Electronic'),
         (3,'00000003','Manual');
 GO
 
+-- DROP VIEW EXAMPLES.ELECTRONICGADGET
 CREATE VIEW Examples.ElectronicGadget
 AS
     SELECT GadgetId, GadgetNumber, GadgetType, 
-           UPPER(GadgetType) AS UpperGadgedType
+           UPPER(GadgetType) AS UpperGadgetType
     FROM   Examples.Gadget
     WHERE GadgetType = 'Electronic';
 GO
+
+SELECT * FROM Examples.ElectronicGadget
 
 INSERT INTO Examples.ElectronicGadget(GadgetId, GadgetNumber, 
                                       GadgetType, UpperGadgetType)
