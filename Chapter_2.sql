@@ -7,24 +7,34 @@
 CREATE SCHEMA Examples;
 GO
 
+DROP TABLE IF EXISTS Examples.Widget;
 CREATE TABLE Examples.Widget
 (
     WidgetId    int CONSTRAINT PKWidget PRIMARY KEY,
     RowLastModifiedTime datetime2(0) NOT NULL
 );
 GO
+INSERT INTO Examples.Widget (WidgetId, RowLastModifiedTime)
+VALUES (1, SYSDATETIME());
+INSERT INTO Examples.Widget (WidgetId)
+VALUES (1);
 
 ALTER TABLE Examples.Widget
   ADD CONSTRAINT DFLTWidget_RowLastModifiedTime 
          DEFAULT (SYSDATETIME()) FOR RowLastModifiedTime;
 GO
 
+-- SELECT * FROM Examples.Widget;
 INSERT INTO Examples.Widget(WidgetId)
-VALUES (1),(2);
+VALUES (2);
+INSERT INTO Examples.Widget(WidgetId)
+VALUES (3);
 GO
 
 INSERT INTO Examples.Widget(WidgetId, RowLastModifiedTime)
-VALUES (3,DEFAULT), (4,DEFAULT);
+VALUES (4,DEFAULT);
+INSERT INTO Examples.Widget(WidgetId, RowLastModifiedTime)
+VALUES (5,DEFAULT);
 GO
 
 SELECT *
@@ -70,6 +80,7 @@ INSERT INTO Examples.AllDefaulted(AllDefaultedId)
 DEFAULT VALUES;
 GO
 
+DROP TABLE IF EXISTS Examples.Gadget;
 CREATE TABLE Examples.Gadget
 (
     GadgetId    int IDENTITY(1,1) NOT NULL CONSTRAINT PKGadget PRIMARY KEY,
@@ -81,6 +92,8 @@ GO
 INSERT INTO Examples.Gadget(GadgetCode)
 VALUES ('Gadget'), ('Gadget'), ('Gadget');
 GO
+
+SELECT * FROM Examples.Gadget;
 
 DELETE FROM Examples.Gadget WHERE GadgetId in (2,3);
 GO
@@ -100,7 +113,8 @@ CREATE TABLE Examples.GroceryItem
 (
    ItemCost smallmoney NULL,
    CONSTRAINT CHKGroceryItem_ItemCostRange 
-       CHECK (ItemCost > 0 AND ItemCost < 1000)
+       CHECK (ItemCost > 0 AND ItemCost < 1000 AND ItemCost IS NOT NULL
+)
 );
 GO
 
@@ -115,6 +129,19 @@ GO
 INSERT INTO Examples.GroceryItem
 VALUES (NULL);
 GO
+
+-- steps to modify the constraint
+-- DROP the existing constraint
+ALTER TABLE Examples.GroceryItem
+	DROP CONSTRAINT CHKGroceryItem_ItemCostRange;
+-- Remove or Update any value that does not meet the constraint
+DELETE FROM Examples.GroceryItem WHERE ItemCost IS NULL;
+-- Add new constraint
+ALTER TABLE Examples.GroceryItem
+	ADD CONSTRAINT CHKGroceryItem_ItemCostRange 
+       CHECK (ItemCost > 0 
+				AND ItemCost < 1000 
+				AND ItemCost IS NOT NULL);
 
 --------Enforcing a format for data in a column 
 
@@ -139,6 +166,16 @@ INSERT INTO Examples.Message(MessageTag, Comment)
 VALUES ('Bad',''); 
 GO
 
+INSERT INTO Examples.Message(MessageTag, Comment)
+VALUES ('A-123',''); 
+GO
+
+INSERT INTO Examples.Message(MessageTag, Comment)
+VALUES ('A-123','Successfull insert'); 
+GO
+
+SELECT * FROM Examples.Message;
+
 --------Coordinate multiple values together 
 CREATE TABLE Examples.Customer
 (
@@ -148,6 +185,9 @@ CREATE TABLE Examples.Customer
       CHECK (NOT (ForcedDisabledFlag = 1 AND ForcedEnabledFlag = 1))
 );
 GO
+
+INSERT INTO Examples.Customer 
+VALUES (0,0);
 
 ------Using FOREIGN KEY constraints to enforce relationships
 
