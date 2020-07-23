@@ -288,12 +288,15 @@ CREATE TABLE Examples.InvoiceLineItem
 GO
 
 INSERT INTO Examples.Invoice(InvoiceId)
-VALUES (1),(2),(3);
+VALUES (2034),(2040),(2050);
 GO
 
 INSERT INTO Examples.InvoiceLineItem(InvoiceLineItemId, InvoiceId,InvoiceLineNumber)
-VALUES (1,1,1),(2,1,2), (3,2,1);
+VALUES (1,2034,1),(2,2034,2), (3,2040,1);
 GO
+
+SELECT * FROM Examples.Invoice;
+SELECT * FROM Examples.InvoiceLineItem;
 
 SELECT Invoice.InvoiceId, InvoiceLineItem.InvoiceLineItemId
 FROM   Examples.Invoice     
@@ -303,7 +306,7 @@ GO
 
 
 DELETE Examples.Invoice
-WHERE  InvoiceId = 1;
+WHERE  InvoiceId = 2034;
 GO
 
 
