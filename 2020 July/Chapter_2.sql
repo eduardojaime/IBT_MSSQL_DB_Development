@@ -342,19 +342,25 @@ SET   Code = 'Black';
 GO
 
 --------Relating a table to itself to form a hierarchy
-
+DROP TABLE IF EXISTS Examples.Employee;
 CREATE TABLE Examples.Employee
 (
 	EmployeeId int NOT NULL CONSTRAINT PKEmployee PRIMARY KEY,
-	EmployeeNumber char(8) NOT NULL,
-         ManagerId int NULL
-               CONSTRAINT FKEmployee_Ref_ExamplesEmployee
-                   REFERENCES Examples.Employee (EmployeeId);
- );
+	EmployeeNumber char(8) NOT NULL, -- company specific number such as IT890, HR300, FN540, SL900
+	Position nvarchar(50) NOT NULL,
+    ManagerId int NULL
+        CONSTRAINT FKEmployee_Ref_ExamplesEmployee
+            REFERENCES Examples.Employee (EmployeeId)
+);
 GO
 
-INSERT INTO Examples.Employee(EmployeeId, EmployeeNumber, ManagerId)
-VALUES (1,'00000001',NULL), (2,'10000001',1),(3,'10000002',1), (4,'20000001',3);
+INSERT INTO Examples.Employee(EmployeeId, EmployeeNumber, Position, ManagerId)
+VALUES (1,'00000001','CEO',NULL), 
+(2,'10000001','VP of Sales',1),
+(3,'10000002', 'VP of Technology',1), 
+(4,'20000001','Director of IT', 3),
+(5,'30000001','eCommerce Manager', 4),
+(6,'40000001','Web Developer', 5);
 GO
 
 SELECT *
@@ -363,26 +369,34 @@ GO
 
 WITH EmployeeHierarchy AS
 (
-    SELECT EmployeeID,  CAST(CONCAT('\',EmployeeId,'\') AS varchar(1500)) AS Hierarchy
-    FROM HumanResources.Employee
-    WHERE ManagedByEmployeeId IS NULL
+    SELECT EmployeeID,  
+	Employee.Position,
+	CAST(CONCAT('\',EmployeeId,'\') AS varchar(1500)) AS Hierarchy
+    FROM Examples.Employee
+    WHERE ManagerId IS NULL
+
     UNION ALL
-    SELECT Employee.EmployeeID, CAST(CONCAT(Hierarchy,Employee.EmployeeId,'\') 
-                                                        AS varchar(1500)) AS Hierarchy
-    FROM HumanResources.Employee
+
+    SELECT Employee.EmployeeID,
+	Employee.Position,
+	CAST(CONCAT(Hierarchy, Employee.EmployeeId,'\') AS varchar(1500)) AS Hierarchy
+    FROM Examples.Employee
       INNER JOIN EmployeeHierarchy
-        ON Employee.ManagedByEmployeeId = EmployeeHierarchy.EmployeeId
+        ON Employee.ManagerId = EmployeeHierarchy.EmployeeId
   )
 SELECT *
 FROM   EmployeeHierarchy;
 GO
 
 --------FOREIGN KEY constraints relating to a UNIQUE constraint instead of a PRIMARY KEY constraint
+-- Catalog table
 CREATE TABLE Examples.Color
 (
       ColorId   int NOT NULL CONSTRAINT PKColor PRIMARY KEY,
       ColorName varchar(30) NOT NULL CONSTRAINT AKColor UNIQUE
 );
+
+
 INSERT INTO Examples.Color(ColorId, ColorName)
 VALUES (1,'Orange'),(2,'White');
 GO
@@ -687,7 +701,6 @@ CREATE TABLE Examples.SimpleTable
 GO
 
 CREATE PROCEDURE Examples.SimpleTable_Insert
-    @SimpleTableId int,
     @Value1  varchar(20),
     @Value2  varchar(20)
 AS
@@ -706,15 +719,19 @@ AS
     WHERE SimpleTableId = @SimpleTableId;
 GO
 CREATE PROCEDURE Examples.SimpleTable_Delete
-    @SimpleTableId int,
-    @Value  varchar(20)
+    @SimpleTableId int
 AS
     DELETE Examples.SimpleTable
     WHERE SimpleTableId = @SimpleTableId
 GO
 
-
 CREATE PROCEDURE Examples.SimpleTable_Select
+AS
+	SELECT * FROM Examples.SimpleTable;
+GO
+
+
+CREATE PROCEDURE Examples.SimpleTable_SelectOrderBy
 AS
    SELECT SimpleTableId, Value1, Value2
    FROM Examples.SimpleTable
@@ -734,6 +751,7 @@ AS
    WHERE Value1 LIKE 'Z%'
    ORDER BY Value1 DESC;
 GO
+EXEC Examples.SimpleTable_SelectValue1StartWithQorZ
 
 CREATE PROCEDURE Examples.SimpleTable_SelectValue1StartWithQorZ
 AS
@@ -743,18 +761,20 @@ AS
      WHERE  Value1 LIKE '[QZ]%';
 GO
 
-CREATE PROCEDURE Examples.ProcedureName
+CREATE PROCEDURE Examples.SelectBogusTable
 AS
 SELECT ColumnName From Bogus.TableName;
 GO
+EXEC Examples.SelectBogusTable;
 
-CREATE PROCEDURE Examples.SimpleTable_Select
+CREATE PROCEDURE Examples.SimpleTable_SelectNoCount
 AS
    SET NOCOUNT ON;
    SELECT SimpleTableId, Value1, Value2
    FROM Examples.SimpleTable
    ORDER BY Value1;
 GO
+EXEC Examples.SimpleTable_SelectNoCount;
 
 ----Implement input and output parameters
 
@@ -781,7 +801,7 @@ EXECUTE Examples.Parameter_Insert;
 --by position, @Value1 parameter only
 EXECUTE Examples.Parameter_Insert 'Some Entry';
 --both columns by position
-EXECUTE Examples.Parameter_Insert 'More Entry','More Entry';
+EXECUTE Examples.Parameter_Insert 'More Entry','More Entry2';
 
 -- using the name of the parameter (could also include @Value2);
 EXECUTE Examples.Parameter_Insert @Value1 = 'Other Entry';
@@ -792,6 +812,8 @@ GO
 
 EXECUTE Examples.Parameter_Insert @Value1 = 'Remixed Entry', 'Remixed Entry';
 GO
+
+SELECT * FROM EXAMPLES.Parameter;
 
 ALTER PROCEDURE Examples.Parameter_Insert
     @Value1 varchar(20) = 'No entry given',
@@ -810,7 +832,7 @@ GO
 
 
 DECLARE @Value1 varchar(20) = 'Test',
-        @Value2 varchar(20) = 'Test',
+        @Value2 varchar(20) = 'THIS WILL BE ALL LOWERCASE',
         @NewParameterId int = -200;
 
 EXECUTE Examples.Parameter_Insert @Value1 = @Value1,
