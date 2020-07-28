@@ -1,0 +1,28 @@
+1 Sunglasses
+1 Wallet
+Total 60
+
+>  Order: payment, order, orderline
+
+
+PAYMENTS
+-------
+PaymentId PK       >  100
+Type = VISA or MC
+BillingAddress
+NameOnCard
+
+ORDERS
+------
+OrderNbr PK >> 300
+ShippingAddress
+RecipientName
+Date
+Total
+PaymentId FK > 100
+
+ORDERLINEITEMS
+---------------
+ItemId PK
+OrderNbr FK >> 300
+
