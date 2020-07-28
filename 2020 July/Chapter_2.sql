@@ -919,7 +919,9 @@ AS
     DECLARE @NoOp int;
 GO
 
+-- DECLARE A VARIABLE TO STORE THE CODE
 DECLARE @ReturnCode int;
+-- EXECUTE STORE PROCEDURE
 EXECUTE @ReturnCode = SimpleReturnValue;
 SELECT @ReturnCode as ReturnCode;
 GO
@@ -940,8 +942,13 @@ AS
     ElSE RETURN 0;
 GO
 
+DECLARE @ReturnCode INT;
+EXECUTE @ReturnCode = DoOperation @Value = 0;
+SELECT @ReturnCode;
+GO
+
 DECLARE @ReturnCode int;
-EXECUTE @ReturnCode = DoOperation @Value = NULL;
+EXECUTE @ReturnCode = DoOperation @Value = 0;
 SELECT  @ReturnCode, 
         CASE @ReturnCode WHEN 1 THEN 'Success, 0 Entered' 
                          WHEN -1 THEN 'Invalid Input'
@@ -954,13 +961,15 @@ CREATE TABLE Examples.Player
 (
     PlayerId    int NOT NULL CONSTRAINT PKPlayer PRIMARY KEY,
     TeamId      int NOT NULL, --not implemented reference to Team Table
-    PlayerNumber char(2) NOT NULL,
+    PlayerNumber char(2) NOT NULL, 
     CONSTRAINT AKPlayer UNIQUE (TeamId, PlayerNumber)
 )
 INSERT INTO Examples.Player(PlayerId, TeamId, PlayerNumber)
 VALUES (1,1,'18'),(2,1,'45'),(3,1,'40');
 GO
 
+
+-- DROP PROCEDURE IF EXISTS Examples.Player_GetByPlayerNumber;
 CREATE PROCEDURE Examples.Player_GetByPlayerNumber
 (
     @PlayerNumber char(2)
@@ -985,9 +994,10 @@ CREATE PROCEDURE Examples.Player_GetByPlayerNumber
             IF @PlayerNumber = @Loop_PlayerNumber
                 INSERT INTO @PlayerList(PlayerId)
                 VALUES (@Loop_PlayerId);
+		END	
 GO
 
-EXECUTE  Examples.Player_Get @PlayerNumber = '18';  
+EXECUTE  Examples.Player_GetByPlayerNumber @PlayerNumber = '18';  
 GO
       
 
@@ -995,7 +1005,7 @@ ALTER PROCEDURE Examples.Player_GetByPlayerNumber
 (
     @PlayerNumber char(2)
 ) AS
-    SET NOCOUNT ON
+    SET NOCOUNT ON -- eliminates the (x rows affected) message
     SELECT Player.PlayerId, Player.TeamId
     FROM   Examples.Player
     WHERE  PlayerNumber = @PlayerNumber;
@@ -1010,8 +1020,10 @@ GO
 THROW 50000, 'This is an error message',1;
 GO
 
-RAISERROR ('This is an error message',16,1);
+RAISERROR ('This is an error message',18,1);
 GO
+
+
 
 THROW 50000, 'This is an error message',1;
 SELECT 'Batch continued'
@@ -1050,7 +1062,7 @@ CREATE TABLE Examples.ErrorTesting
 (
     ErrorTestingId int NOT NULL CONSTRAINT PKErrorTesting PRIMARY KEY,
     PositiveInteger int NOT NULL 
-         CONSTRAINT CHKErrorTesting_PositiveInteger CHECK PositiveInteger > 0)
+         CONSTRAINT CHKErrorTesting_PositiveInteger CHECK (PositiveInteger > 0)
 );
 GO
 
@@ -1124,6 +1136,7 @@ AS
         SELECT ERROR_MESSAGE() as ErrorMessage;
         SELECT ERROR_NUMBER() AS ErrorNumber, ERROR_SEVERITY() as ErrorSeverity, 
                ERROR_LINE() As ErrorLine;
+	END CATCH
 GO
 
 EXECUTE Examples.ErrorTesting_InsertTwo;
@@ -1227,6 +1240,8 @@ EXEC Examples.Worker_AddWithAssignment
 EXEC Examples.Worker_AddWithAssignment 
                      @WorkerName='Ian Palangio', @CompanyName='Humongous Insurance';
 GO
+
+select * from Examples.WorkerAssignment;
 
 
 ALTER PROCEDURE Examples.Worker_AddWithAssignment
