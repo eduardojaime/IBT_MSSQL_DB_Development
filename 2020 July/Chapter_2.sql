@@ -1372,7 +1372,7 @@ EXECUTE dbo.CallChangeTransactionLevel;
 GO
 
 
---Skill 2.3 Create triggers and user-defined functions
+--Skill 2.3 Create triggers and user-defined functions 
 
 ----Design trigger logic based on business requirements
 
@@ -1394,35 +1394,34 @@ GO
 
 CREATE TRIGGER Examples.AccountContact_TriggerAfterInsertUpdate
 ON Examples.AccountContact
-AFTER INSERT, UPDATE AS
-BEGIN
-  SET NOCOUNT ON;
-  SET ROWCOUNT 0; --in case the client has modified the rowcount
-  BEGIN TRY
-  --check to see if data is returned by the query from previously
-  IF EXISTS ( SELECT AccountId
-              FROM   Examples.AccountContact
-                     --correlates the changed rows in inserted to the other rows
-                     --for the account, so we can check if the rows have changed
-              WHERE  EXISTS (SELECT *
-                             FROM   inserted
-                             WHERE  inserted.AccountId = 
-                                                 AccountContact.AccountId
-                             UNION ALL
-                             SELECT *
-                             FROM   deleted
-                             WHERE  deleted.AccountId = 
-                                                 AccountContact.AccountId)
-              GROUP BY AccountId
-              HAVING SUM(CASE WHEN PrimaryContactFlag = 1 then 1 ELSE 0 END) <> 1)
-          THROW  50000, 'Account(s) do not have only one primary contact.', 1;
-   END TRY
-   BEGIN CATCH
-        IF XACT_STATE() <> 0
-            ROLLBACK TRANSACTION;
-        THROW;
-     END CATCH
-END;
+AFTER INSERT, UPDATE 
+AS
+	SET NOCOUNT ON;
+	SET ROWCOUNT 0; --in case the client has modified the rowcount
+	BEGIN TRY
+		--check to see if data is returned by the query from previously
+		IF EXISTS ( SELECT AccountId
+				FROM   Examples.AccountContact
+						--correlates the changed rows in inserted to the other rows
+						--for the account, so we can check if the rows have changed
+				WHERE  EXISTS (SELECT *
+								FROM   inserted
+								WHERE  inserted.AccountId = 
+													AccountContact.AccountId
+								UNION ALL
+								SELECT *
+								FROM   deleted
+								WHERE  deleted.AccountId = 
+													AccountContact.AccountId)
+				GROUP BY AccountId
+				HAVING SUM(CASE WHEN PrimaryContactFlag = 1 then 1 ELSE 0 END) <> 1)
+			THROW  50000, 'Account(s) do not have only one primary contact.', 1;
+	END TRY
+	BEGIN CATCH
+		IF XACT_STATE() <> 0
+			ROLLBACK TRANSACTION;
+		THROW;
+	END CATCH
 GO
 
 
@@ -1461,7 +1460,7 @@ BEGIN
    SET NOCOUNT ON;
    SET ROWCOUNT 0; --in case the client has modified the rowcount
    BEGIN TRY
-   IF EXISTS ( SELECT AccountId
+   IF EXISTS (SELECT AccountId
                 FROM   Examples.AccountContact
                 WHERE  EXISTS (SELECT *
                                FROM   deleted
@@ -1898,14 +1897,14 @@ CREATE FUNCTION Examples.ReturnIntValue
 (
     @Value  int
 )
-RETURNS int
-AS
-  BEGIN
-    RETURN @Value
-  END;
+	RETURNS int -- specify what you are returning
+	AS
+	  BEGIN
+		RETURN @Value
+	  END;
 GO
 
-SELECT Functions.ReturnIntValue(1) as IntValue;
+SELECT Examples.ReturnIntValue(1) as IntValue;
 GO
 
 SELECT OrderId, 1/ (4732-OrderId)
@@ -1918,8 +1917,9 @@ CREATE FUNCTION Sales.Customers_ReturnOrderCount
     @OrderDate date = NULL
 )
 RETURNS INT
-WITH RETURNS NULL ON NULL INPUT, --if all parameters NULL, return NULL immediately
-     SCHEMABINDING --make certain that the tables/columns referenced cannot change
+WITH RETURNS NULL ON NULL INPUT, 
+--if all parameters NULL, return NULL immediately
+SCHEMABINDING --make certain that the tables/columns referenced cannot change
 AS
   BEGIN
       DECLARE @OutputValue int
@@ -1940,7 +1940,7 @@ GO
 SELECT Sales.Customers_ReturnOrderCount(905, DEFAULT);
 GO
 
-SELECT CustomerID, Sales.Customers_ReturnOrderCount(905, DEFAULT)
+SELECT CustomerID, Sales.Customers_ReturnOrderCount(CustomerID, DEFAULT) AS ALLORDERS
 FROM   Sales.Customers;
 GO
 
@@ -1949,8 +1949,9 @@ FROM   Sales.Orders
 GROUP  BY CustomerID;
 GO
 
-SELECT N'CPO' + RIGHT(N'00000000' + CustomerPurchaseOrderNumber,8)
-FROM WideWorldImporters.Sales.Orders;
+-- without function CPO00012126
+SELECT N'CPO' + RIGHT(N'00000000' + CustomerPurchaseOrderNumber,8), CustomerPurchaseOrderNumber
+FROM Sales.Orders;
 GO
 
 CREATE FUNCTION Sales.Orders_ReturnFormattedCPO
@@ -1958,15 +1959,18 @@ CREATE FUNCTION Sales.Orders_ReturnFormattedCPO
     @CustomerPurchaseOrderNumber nvarchar(20)
 )
 RETURNS nvarchar(20)
-WITH RETURNS NULL ON NULL INPUT,
-     SCHEMABINDING
+WITH RETURNS NULL ON NULL INPUT
 AS
  BEGIN
     RETURN (N'CPO' + RIGHT(N'00000000' + @CustomerPurchaseOrderNumber,8));
  END;
 GO
 
+--CPO00012345
 SELECT Sales.Orders_ReturnFormattedCPO('12345') as CustomerPurchaseOrderNumber;
+GO
+--CPO12345678
+SELECT Sales.Orders_ReturnFormattedCPO('12345678') as CustomerPurchaseOrderNumber;
 GO
 
 SELECT OrderId
@@ -2013,7 +2017,7 @@ GO
 SELECT CustomerId, FirstDaySales.SalesCount, FirstDaySales.HasBackorderFlag
 FROM   Sales.Customers
         OUTER APPLY Sales.Customers_ReturnOrderCountSetSimple
-                            (CustomerId, AcountOpenedDate) as FirstDaySales
+                            (CustomerId, AccountOpenedDate) as FirstDaySales
 WHERE  FirstDaySales.SalesCount > 0;
 GO
 
