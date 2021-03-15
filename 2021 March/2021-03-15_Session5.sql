@@ -84,3 +84,45 @@ WHERE InvoiceID BETWEEN 10001 AND 20000;
 
 SELECT * FROM Examples.Invoices_NorthAmerica;
 SELECT * FROM Examples.Invoices_Europe;
+GO
+
+CREATE VIEW Examples.InvoicesPartitioned
+AS
+	SELECT InvoiceId, CustomerId, InvoiceDate
+	FROM Examples.Invoices_NorthAmerica
+	UNION ALL
+	SELECT InvoiceId, CustomerId, InvoiceDate
+	FROM Examples.Invoices_Europe;
+GO
+
+-- Includes all the records from the two tables as if it was one table
+-- Filtering by PRIMARY KEY uses only one index because PRIMARY KEYs become indexes
+SELECT * FROM Examples.InvoicesPartitioned WHERE InvoiceId = 5000;
+
+-- Filtering by any other non-indexed column will require more processing
+SELECT * FROM Examples.InvoicesPartitioned WHERE InvoiceDate = '2013-01-01';
+
+USE WideWorldImporters;
+GO
+
+--- VIEW with aggregate functions and count
+CREATE VIEW Sales.InvoiceCustomerInvoiceAggregates
+WITH SCHEMABINDING
+AS
+SELECT Invoices.CustomerId,
+       SUM(ExtendedPrice * Quantity) AS SumCost,
+       SUM(LineProfit) AS SumProfit,
+       COUNT_BIG(*) AS TotalItemCount 
+FROM  Sales.Invoices
+          JOIN Sales.InvoiceLines
+                 ON  Invoices.InvoiceID = InvoiceLines.InvoiceID
+GROUP  BY Invoices.CustomerID;
+GO
+
+SELECT *
+FROM   Sales.InvoiceCustomerInvoiceAggregates;
+GO
+
+CREATE UNIQUE CLUSTERED INDEX XPKInvoiceCustomerInvoiceAggregates on Sales.InvoiceCustomerInvoiceAggregates(CustomerID);
+GO
+
