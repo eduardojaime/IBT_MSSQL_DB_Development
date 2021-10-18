@@ -82,5 +82,3 @@ FROM Students;
 -- Aliases for columns >> for calculated and existing columns
 SELECT FirstName + ' ' + LastName AS 'Full Name', EmailAddr AS 'Primary Email Address'
 FROM Students;
-
-
