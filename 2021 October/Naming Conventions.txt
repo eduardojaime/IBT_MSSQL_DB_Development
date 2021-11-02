@@ -1,0 +1,12 @@
+Conventions:
+
+Indexes > IDX_
+PK > PK_ ? let sql
+FK > FK_
+Stored procedures> PROC_
+Views > VW_
+Functions > FN_
+DEFAULT > DFT_
+CHECK > CHK_
+Tables????? Do they need? TBL_ (underscore) CamelCase > Students, Books, StudentBook (M to M)
+
